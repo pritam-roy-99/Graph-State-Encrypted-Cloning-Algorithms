@@ -1,67 +1,4 @@
 # Graph-State Encrypted Cloning Certification (GSECC)
-## and Graph-State Decoder Construction (GSDC)
-
-This repository provides a reference implementation of two complementary algorithms developed for the analysis of **graph-state encrypted cloning resources**.
-
-- **Graph-State Encrypted Cloning Certification (GSECC)** is an **exact certification algorithm** that determines whether a graph state can serve as a valid encrypted cloning resource.
-
-- **Graph-State Decoder Construction (GSDC)** is a constructive algorithm that explicitly recovers the decoder unitary associated with every certified graph state.
-
-The implementation accompanies the theoretical results presented in our work and is intended as both a reproducible research tool and a reference implementation for future studies on graph-state encrypted cloning.
-
----
-
-# Overview
-
-The repository provides implementations of
-
-- Exact certification of graph-state encrypted cloning resources.
-- Gaussian elimination over the binary field GF(2).
-- Exhaustive search over balanced graph bipartitions.
-- Automatic verification of maximal mixedness.
-- Explicit decoder construction.
-- Publication-quality graph visualization.
-- Benchmark examples for several important graph families.
-
-Unlike heuristic search methods, the certification algorithm implemented here is **exact**. Every positive certification and every negative result produced by the algorithm is mathematically rigorous.
-
----
-
-# Mathematical Notation
-
-Throughout this repository,
-
-- **$m$** denotes the number of clones.
-- **$k$** denotes the number of input (signal) qubits.
-- **$mk = m \times k$** denotes the size of each subsystem.
-- **$2mk$** denotes the total number of graph vertices.
-
-Every graph processed by the algorithm must therefore satisfy
-
-$$
-|V| = 2mk.
-$$
-
-A balanced bipartition of the graph is written as
-
-$$
-V = S \cup N,
-$$
-
-with
-
-$$
-|S| = |N| = mk.
-$$
-
-Throughout the documentation,
-
-- **$S$** denotes the signal subsystem.
-- **$N$** denotes the noise subsystem.
-
----
-
-# Problem 1: Graph-State Encrypted Cloning Certification (GSECC)
 
 ## Objective
 
@@ -71,232 +8,227 @@ $$
 G=(V,E),
 $$
 
-the objective is to determine whether there exists a balanced partition
+GSECC determines whether there exists a balanced partition
 
 $$
-V=S\cup N,
-\qquad
-|S|=|N|=mk,
+V=S\cup N,\qquad |S|=|N|=mk,
 $$
 
-such that the associated cut (biadjacency) matrix satisfies
+such that
 
 $$
-\text{rank}_{GF(2)}(\Gamma_{S,N}) = mk.
+\mathrm{rank}_{GF(2)}(\Gamma_{S,N})=mk.
 $$
 
-If such a partition exists, the corresponding graph state is certified as a valid encrypted cloning resource.
-
-Equivalently, certification guarantees that the reduced density operator of the signal subsystem is maximally mixed,
+If this condition holds, the graph state is certified as a valid encrypted cloning resource. Equivalently,
 
 $$
-\rho_S
-=
-\frac{I}{2^{mk}}.
+\rho_S=\frac{I}{2^{mk}},
 $$
+
+so the signal subsystem is maximally mixed.
 
 ---
 
-# Certification Algorithm
+## Algorithm
 
-The GSECC algorithm is deterministic and performs an exhaustive search over all balanced graph bipartitions.
+Given the graph adjacency matrix, GSECC proceeds as follows.
 
-Given the adjacency matrix of a graph, the algorithm proceeds as follows.
+1. Verify that the graph contains exactly $2mk$ vertices.
+2. Enumerate all balanced bipartitions $(S,N)$ (fixing one vertex to remove the $S\leftrightarrow N$ symmetry).
+3. Construct the cut matrix $\Gamma_{S,N}$.
+4. Compute $\mathrm{rank}_{GF(2)}(\Gamma_{S,N})$ using Gaussian elimination.
+5. If the rank equals $mk$, return $(S,N)$ as a valid certificate.
+6. If no valid partition is found after exhaustive search, return `None`.
 
-### Step 1 — Validate the graph size
-
-Verify that the graph contains exactly
-
-$$
-2mk
-$$
-
-vertices.
-
-If this condition is violated, execution terminates immediately with a `ValueError`.
+Since every balanced partition is examined, a return value of `None` is a rigorous proof that no valid encrypted-cloning partition exists.
 
 ---
 
-### Step 2 — Enumerate balanced partitions
+## Computational Complexity
 
-Generate every balanced bipartition
-
-$$
-(S,N)
-$$
-
-satisfying
+Verifying a candidate partition requires Gaussian elimination over GF(2), giving a complexity of
 
 $$
-|S|=|N|=mk.
+O((mk)^3).
 $$
 
-To eliminate the symmetry
+The exhaustive search examines
 
 $$
-S \leftrightarrow N,
-$$
-
-one vertex is fixed during the enumeration.
-
----
-
-### Step 3 — Construct the cut matrix
-
-For each candidate partition, construct the cut (biadjacency) matrix
-
-$$
-\Gamma_{S,N}.
-$$
-
----
-
-### Step 4 — Compute the GF(2) rank
-
-Compute
-
-$$
-\operatorname{rank}_{GF(2)}
-\left(
-\Gamma_{S,N}
-\right)
-$$
-
-using Gaussian elimination over the binary field GF(2).
-
----
-
-### Step 5 — Certification
-
-If
-
-$$
-\operatorname{rank}_{GF(2)}
-\left(
-\Gamma_{S,N}
-\right)
-=
-mk,
-$$
-
-the partition
-
-$$
-(S,N)
-$$
-
-is returned as a valid certificate.
-
----
-
-### Step 6 — Exhaustive rejection
-
-If every balanced partition has been examined and none satisfies the certification criterion, the algorithm returns
-
-```text
-None
-```
-
-which constitutes a rigorous proof that no valid balanced partition exists.
-
-Unlike randomized or heuristic search methods, this is **not** merely a failure to find a solution.
-
----
-
-# Exactness of the Algorithm
-
-The implementation performs an exhaustive search over the complete space of balanced bipartitions.
-
-Consequently,
-
-- every returned certificate is mathematically correct;
-- every rejected graph has been exhaustively verified;
-- every negative result is a proof of non-existence.
-
-The algorithm therefore provides **exact certification**, not heuristic evidence.
-
----
-
-# Computational Complexity
-
-## Certificate Verification
-
-For a fixed candidate partition, certification requires only the computation of the GF(2) rank of the cut matrix.
-
-Using Gaussian elimination, this requires
-
-$$
-O((mk)^3)
-$$
-
-operations.
-
-Thus, verification of a proposed certificate is polynomial in the subsystem size.
-
----
-
-## Exhaustive Search
-
-To discover a valid certificate, the algorithm examines every balanced partition,
-
-$$
-\binom{2mk-1}{mk-1},
-$$
-
-where one vertex is fixed to remove the symmetry between
-
-$$
-S
-\quad\text{and}\quad
-N.
-$$
-
-The overall complexity is therefore
-
-$$
-O\!\left(
 \binom{2mk-1}{mk-1}
-(mk)^3
-\right).
 $$
 
-The exponential complexity arises solely from the exhaustive search over balanced bipartitions, while the verification of an individual certificate remains polynomial.
+balanced partitions, resulting in an overall complexity of
+
+$$
+O\!\left(\binom{2mk-1}{mk-1}(mk)^3\right).
+$$
+
+The exponential scaling arises from the exhaustive search, while verification of an individual certificate remains polynomial.
 
 ---
 
 ## Practical Scalability
 
-The number of balanced partitions grows rapidly with subsystem size.
-
 | $mk$ | Balanced partitions |
-|------:|--------------------:|
+|-----:|--------------------:|
 | 4 | 35 |
 | 6 | 462 |
 | 8 | 6,435 |
 | 10 | 92,378 |
 | 20 | $\approx 6.9\times10^{10}$ |
 
-This exponential growth is an inherent property of exhaustive certification rather than a limitation of the implementation itself.
+---
+
+## Exact Certification
+
+This implementation performs **exact** certification. Every positive result is a valid certificate, and every negative result is a proof that no balanced partition satisfying
+
+$$
+\mathrm{rank}_{GF(2)}(\Gamma_{S,N})=mk
+$$
+
+exists.
+
+Only the exhaustive certification algorithm is included in this repository.
+
+
 
 ---
 
-# Exact Certification Only
+# Problem 2: Graph-State Decoder Construction (GSDC)
 
-This repository intentionally implements **only the exact certification algorithm**.
+Once GSECC certifies a balanced partition $(S,N)$, the decoder unitary can be constructed explicitly.
 
-Earlier experimental versions also included randomized search routines for exploratory studies on very large graphs. These routines have been omitted because they cannot certify non-existence.
+## Objective
 
-A heuristic search can only report
+Given a certified graph state, construct a unitary
 
-> No certificate found within the search budget.
+$$
+W:\mathcal{H}_N\rightarrow\mathcal{H}_N
+$$
 
-whereas the exhaustive algorithm implemented here can rigorously conclude
+such that
 
-> No valid balanced partition exists.
+$$
+|G\rangle=(I_S\otimes W)|\Phi_{2^{mk}}\rangle,
+$$
 
-For this reason, only the exact certification algorithm is included in the released implementation.
+where
 
+$$
+|\Phi_{2^{mk}}\rangle=
+\frac{1}{\sqrt{2^{mk}}}
+\sum_i |i\rangle_S|i\rangle_N
+$$
 
+is the canonical maximally entangled state.
 
+---
 
+## Decoder Construction
+
+Given a certified partition $(S,N)$, the decoder is constructed as follows.
+
+1. Reorder the qubits so that the signal subsystem precedes the noise subsystem.
+2. Express the graph state as
+
+   $$
+   |G\rangle=\sum_{i,j}M_{ij}|i\rangle_S|j\rangle_N.
+   $$
+
+3. Since
+
+   $$
+   \rho_S=\frac{I}{2^{mk}},
+   $$
+
+   the matrix
+
+   $$
+   Q=\sqrt{2^{mk}}\,M
+   $$
+
+   is unitary.
+
+4. The decoder is obtained as
+
+   $$
+   W=Q^T.
+   $$
+
+The implementation automatically verifies the unitarity of $W$ and the reconstruction of the graph state.
+
+---
+
+# Features
+
+- Exact GSECC certification
+- GF(2) Gaussian elimination
+- Graph-state generation
+- Reduced density matrix computation
+- Decoder construction (GSDC)
+- Publication-quality graph visualization
+- Built-in benchmark graph families
+
+---
+
+# Main Functions
+
+| Function | Description |
+|----------|-------------|
+| `find_certificate_exact()` | Exact implementation of GSECC. |
+| `verify_certificate()` | Verifies a candidate certificate. |
+| `construct_decoder()` | Constructs and verifies the decoder unitary. |
+| `graph_state_from_adjacency()` | Generates a graph state from an adjacency matrix. |
+| `reduced_density_matrix()` | Computes reduced density matrices. |
+| `plot_graph()` | Generates publication-quality figures. |
+| `report_certificate()` | Runs the complete certification pipeline. |
+
+---
+
+# Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# Requirements
+
+- Python ≥ 3.10
+- NumPy
+- Matplotlib
+- NetworkX
+
+---
+
+# Running
+
+```bash
+python gsecc.py
+```
+
+The script automatically
+
+- certifies graph states,
+- constructs decoder unitaries,
+- verifies numerical correctness,
+- generates PDF and PNG figures.
+
+---
+
+# Included Examples
+
+The repository includes examples for
+
+- Complete graphs
+- Cycle graphs
+- Linear cluster graphs
+- Cluster grids
+- Bell-pair matching graphs
+- GHZ (star) graphs
+- Erdős–Rényi random graphs
 
