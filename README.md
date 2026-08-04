@@ -82,10 +82,7 @@ $$
 such that the associated cut (biadjacency) matrix satisfies
 
 $$
-\operatorname{rank}_{GF(2)}
-\left(\Gamma_{S,N}\right)
-=
-mk.
+\operatorname{rank}_{GF(2)}(\Gamma_{S,N}) = mk.
 $$
 
 If such a partition exists, the corresponding graph state is certified as a valid encrypted cloning resource.
