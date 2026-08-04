@@ -67,9 +67,7 @@ Here
 
 Given a graph
 
-$$
-G=(V,E),
-$$
+$G=(V,E),$
 
 determine whether there exists a balanced partition
 
