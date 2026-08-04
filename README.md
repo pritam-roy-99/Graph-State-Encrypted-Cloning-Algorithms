@@ -17,7 +17,7 @@ $$
 such that
 
 $$
-\mathrm{rank}_{GF(2)}(\Gamma_{S,N})=mk.
+\text{rank}_{GF(2)}(\Gamma_{S,N})=mk.
 $$
 
 If this condition holds, the graph state is certified as a valid encrypted cloning resource. Equivalently,
