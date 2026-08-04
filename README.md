@@ -130,6 +130,7 @@ is the canonical maximally entangled state.
 Given a certified partition $(S,N)$, the decoder is constructed as follows.
 
 1. Reorder the qubits so that the signal subsystem precedes the noise subsystem.
+
 2. Express the graph state as
 
    $$
