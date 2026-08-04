@@ -22,9 +22,7 @@ $$
 
 If this condition holds, the graph state is certified as a valid encrypted cloning resource. Equivalently,
 
-$$
-\rho_S=\frac{I}{2^{mk}},
-$$
+$\rho_S=\frac{I}{2^{mk}},$
 
 so the signal subsystem is maximally mixed.
 
