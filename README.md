@@ -38,9 +38,9 @@ Throughout this repository
 
 Every graph processed by the algorithm must therefore satisfy
 
-$$
+$
 |V|=2mk.
-$$
+$
 
 A balanced graph partition is written as
 
