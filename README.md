@@ -138,13 +138,11 @@ Given a certified partition $(S,N)$, the decoder is constructed as follows.
 
 3. Since
 
-   $$
-   \rho_S=\frac{I}{2^{mk}},
-   $$
+   $\rho_S=\frac{I}{2^{mk}},$
 
    the matrix
 
-   $ Q=\sqrt{2^{mk}}\,M$
+   $Q=\sqrt{2^{mk}}\,M$
   
 
    is unitary.
