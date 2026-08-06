@@ -133,9 +133,8 @@ Given a certified partition $(S,N)$, the decoder is constructed as follows.
 
 2. Express the graph state as
 
-   $$
-   |G\rangle=\sum_{i,j}M_{ij}|i\rangle_S|j\rangle_N.
-   $$
+   $|G\rangle=\sum_{i,j}M_{ij}|i\rangle_S|j\rangle_N.$
+   
 
 3. Since
 
@@ -145,18 +144,15 @@ Given a certified partition $(S,N)$, the decoder is constructed as follows.
 
    the matrix
 
-   $$
-   Q=\sqrt{2^{mk}}\,M
-   $$
+   $ Q=\sqrt{2^{mk}}\,M$
+  
 
    is unitary.
 
 4. The decoder is obtained as
 
-   $$
-   W=Q^T.
-   $$
-
+   $W=Q^T.$
+   
 The implementation automatically verifies the unitarity of $W$ and the reconstruction of the graph state.
 
 ---
