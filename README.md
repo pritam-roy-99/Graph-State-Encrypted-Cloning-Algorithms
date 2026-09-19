@@ -98,7 +98,7 @@ Thus the complete kernel $\ker(B^{\mathsf T})$ specifies the signal-side correla
 
 For odd $m$, some of these correlations can be harmless for particular encoders. Consequently,
 
-$\operatorname{rank}_{\mathbb F_2}B<mk$
+$\text{rank}_{\mathbb F_2}B<mk$
 
 does **not** automatically imply failure.
 
