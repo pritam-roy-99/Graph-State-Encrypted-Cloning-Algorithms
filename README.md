@@ -1,227 +1,401 @@
-# Graph-State Encrypted Cloning Certification (GSECC)
+# Exact Graph-State Encrypted Cloning Certification (GSECC)
 
-## Objective
+## Overview
 
-Given a graph
+This repository implements an exact certification framework for determining when a graph state can serve as a resource for multiparty encrypted quantum cloning under a fixed sector-wise two-Pauli encoder.
 
-$$
-G=(V,E),
-$$
+The central point is that **full signal-noise cut rank is sufficient, but not necessary in general**.
 
-GSECC determines whether there exists a balanced partition
+For even numbers of encrypted outputs, full cut rank remains necessary and sufficient. For odd numbers of outputs, however, certain rank-deficient graph states can still support exact recovery when the complete cut kernel is compatible with the chosen encoder.
 
-$$
-V=S\cup N,\qquad |S|=|N|=mk,
-$$
+The implementation therefore goes beyond a rank-only test and checks the exact graph-state condition
 
-such that
+\[
+\ker\!\left(B_{S\mathcal N}^{\mathsf T}\right)
+\subseteq
+\mathcal E_{P,Q}^{(m,k)}(A_S),
+\]
 
-$$
-\text{rank}_{GF(2)}(\Gamma_{S,N})=mk.
-$$
+where:
 
-If this condition holds, the graph state is certified as a valid encrypted cloning resource. Equivalently,
+- \(S\) is the signal subsystem,
+- \(\mathcal N\) is the common noise/key subsystem,
+- \(B_{S\mathcal N}\) is the signal-noise cut matrix,
+- \(A_S\) is the adjacency matrix induced on the signal subsystem,
+- \((P,Q)\) specifies the ordered two-Pauli encoder class,
+- \(\mathcal E_{P,Q}^{(m,k)}(A_S)\) is the corresponding exceptional kernel subspace.
 
-$\rho_S=\frac{I}{2^{mk}},$
-
-so the signal subsystem is maximally mixed.
-
----
-
-## Algorithm
-
-Given the graph adjacency matrix, GSECC proceeds as follows.
-
-1. Verify that the graph contains exactly $2mk$ vertices.
-2. Enumerate all balanced bipartitions $(S,N)$ (fixing one vertex to remove the $S\leftrightarrow N$ symmetry).
-3. Construct the cut matrix $\Gamma_{S,N}$.
-4. Compute $\mathrm{rank}_{GF(2)}(\Gamma_{S,N})$ using Gaussian elimination.
-5. If the rank equals $mk$, return $(S,N)$ as a valid certificate.
-6. If no valid partition is found after exhaustive search, return `None`.
-
-Since every balanced partition is examined, a return value of `None` is a rigorous proof that no valid encrypted-cloning partition exists.
+The code performs an exhaustive graph-level search over balanced signal-noise cuts and, when required, over logical-sector decompositions of the signal subsystem.
 
 ---
 
-## Computational Complexity
+# 1. Encrypted-Cloning Setting
 
-Verifying a candidate partition requires Gaussian elimination over GF(2), giving a complexity of
+Consider a graph state on
 
-$$
-O((mk)^3).
-$$
+\[
+2mk
+\]
 
-The exhaustive search examines
+qubits.
 
-$$
-\binom{2mk-1}{mk-1}
-$$
+The vertices are partitioned into two equally sized subsystems,
 
-balanced partitions, resulting in an overall complexity of
+\[
+V=S\cup\mathcal N,
+\qquad
+|S|=|\mathcal N|=mk.
+\]
 
-$$
-O\!\left(\binom{2mk-1}{mk-1}(mk)^3\right).
-$$
+Here:
 
-The exponential scaling arises from the exhaustive search, while verification of an individual certificate remains polynomial.
+- \(m\) is the number of encrypted recovery pathways,
+- \(k\) is the number of logical qubits,
+- \(\nu=mk\) is the number of signal qubits and also the number of key/noise qubits.
+
+The signal subsystem is further decomposed into \(k\) logical sectors,
+
+\[
+S=\mathsf S_1\cup\cdots\cup\mathsf S_k,
+\qquad
+|\mathsf S_j|=m.
+\]
+
+Each logical sector contains the \(m\) signal qubits associated with one logical input qubit.
+
+For a chosen balanced cut, write the graph adjacency matrix as
+
+\[
+\Gamma=
+\begin{pmatrix}
+A_S & B_{S\mathcal N}\\
+B_{S\mathcal N}^{\mathsf T} & A_{\mathcal N}
+\end{pmatrix}.
+\]
+
+All ranks, kernels, and linear-algebra operations used in the certification algorithm are evaluated over
+
+\[
+\mathbb F_2.
+\]
 
 ---
 
-## Practical Scalability
+# 2. Why Cut Rank Alone Is Not Enough
 
-| $mk$ | Balanced partitions |
-|-----:|--------------------:|
-| 4 | 35 |
-| 6 | 462 |
-| 8 | 6,435 |
-| 10 | 92,378 |
-| 20 | $\approx 6.9\times10^{10}$ |
+For a graph state, define
 
----
+\[
+B\equiv B_{S\mathcal N}.
+\]
 
-## Exact Certification
+The signal-noise entanglement is determined by the binary cut rank,
 
-This implementation performs **exact** certification. Every positive result is a valid certificate, and every negative result is a proof that no balanced partition satisfying
+\[
+r=
+\operatorname{rank}_{\mathbb F_2}B.
+\]
 
-$$
-\mathrm{rank}_{GF(2)}(\Gamma_{S,N})=mk
-$$
+In particular,
 
-exists.
+\[
+S(\rho_S)=r,
+\]
 
-Only the exhaustive certification algorithm is included in this repository.
+and
 
+\[
+r=mk
+\]
 
+is equivalent to
 
----
+\[
+\rho_S=\frac{I_S}{2^{mk}}.
+\]
 
-# Problem 2: Graph-State Decoder Construction (GSDC)
+Therefore every full-rank balanced cut gives a valid encrypted-cloning resource.
 
-Once GSECC certifies a balanced partition $(S,N)$, the decoder unitary can be constructed explicitly.
+However, the exact criterion is more general.
 
-## Objective
+The reduced state of the signal subsystem has the graph-state stabilizer expansion
 
-Given a certified graph state, construct a unitary
-
-$$
-W:\mathcal{H}_N\rightarrow\mathcal{H}_N
-$$
-
-such that
-
-$$
-|G\rangle=(I_S\otimes W)|\Phi_{2^{mk}}\rangle,
-$$
+\[
+\rho_S
+=
+\frac{1}{2^{mk}}
+\sum_{x\in\ker(B^{\mathsf T})}
+K_S(x),
+\]
 
 where
 
-$$
-|\Phi_{2^{mk}}\rangle=
-\frac{1}{\sqrt{2^{mk}}}
-\sum_i |i\rangle_S|i\rangle_N
-$$
+\[
+K_S(x)
+\doteq
+X^x Z^{A_Sx}.
+\]
 
-is the canonical maximally entangled state.
+Thus the complete kernel
 
----
+\[
+\ker(B^{\mathsf T})
+\]
 
-## Decoder Construction
+specifies the signal-side correlations responsible for any departure from maximal mixing.
 
-Given a certified partition $(S,N)$, the decoder is constructed as follows.
+For odd \(m\), some of these correlations can be harmless for particular encoders. Consequently,
 
-1. Reorder the qubits so that the signal subsystem precedes the noise subsystem.
+\[
+\operatorname{rank}_{\mathbb F_2}B<mk
+\]
 
-2. Express the graph state as
+does **not** automatically imply failure.
 
-   $|G\rangle=\sum_{i,j}M_{ij}|i\rangle_S|j\rangle_N.$
-   
+The exact resource property depends on the pair
 
-3. Since
-
-   $\rho_S=\frac{I}{2^{mk}},$
-
-   the matrix
-
-   $Q=\sqrt{2^{mk}}\,M$
-  
-
-   is unitary.
-
-4. The decoder is obtained as
-
-   $W=Q^T.$
-   
-The implementation automatically verifies the unitarity of $W$ and the reconstruction of the graph state.
+\[
+\text{graph resource}+\text{encoder}.
+\]
 
 ---
 
-# Features
+# 3. Exact Graph-State Criterion
 
-- Exact GSECC certification
-- GF(2) Gaussian elimination
-- Graph-state generation
-- Reduced density matrix computation
-- Decoder construction (GSDC)
-- Publication-quality graph visualization
-- Built-in benchmark graph families
+For a fixed balanced cut, fixed logical-sector decomposition, and fixed two-Pauli encoder \(U_{P,Q}^{(m,k)}\), the graph state is valid exactly when
 
----
+\[
+\boxed{
+\ker(B_{S\mathcal N}^{\mathsf T})
+\subseteq
+\mathcal E_{P,Q}^{(m,k)}(A_S)
+}
+\]
 
-# Main Functions
+where \(\mathcal E_{P,Q}^{(m,k)}(A_S)\) is the exceptional subspace selected by the encoder.
 
-| Function | Description |
-|----------|-------------|
-| `find_certificate_exact()` | Exact implementation of GSECC. |
-| `verify_certificate()` | Verifies a candidate certificate. |
-| `construct_decoder()` | Constructs and verifies the decoder unitary. |
-| `graph_state_from_adjacency()` | Generates a graph state from an adjacency matrix. |
-| `reduced_density_matrix()` | Computes reduced density matrices. |
-| `plot_graph()` | Generates publication-quality figures. |
-| `report_certificate()` | Runs the complete certification pipeline. |
+Because both the cut kernel and the exceptional space are linear subspaces over \(\mathbb F_2\), it is sufficient to test a basis of
+
+\[
+\ker(B^{\mathsf T}).
+\]
 
 ---
 
-# Installation
+# 4. Sector-Indicator Map
 
-```bash
-pip install -r requirements.txt
-```
+For odd \(m\), every nonzero exceptional kernel vector must be constant within each logical sector.
+
+Define
+
+\[
+F:\mathbb F_2^k\rightarrow\mathbb F_2^{mk}
+\]
+
+by
+
+\[
+Fc=
+(c_1\mathbf 1_m,\ldots,c_k\mathbf 1_m),
+\]
+
+where
+
+\[
+c=(c_1,\ldots,c_k)\in\mathbb F_2^k.
+\]
+
+Thus an exceptional vector must have the form
+
+\[
+x=Fc.
+\]
+
+Computationally, this means that every kernel basis vector must first be checked for constancy within every logical sector.
 
 ---
 
-# Requirements
+# 5. Parity- and Encoder-Dependent Classification
 
-- Python ≥ 3.10
-- NumPy
-- Matplotlib
-- NetworkX
+The exact criterion separates into four branches.
+
+## Even \(m\)
+
+For every two-Pauli encoder,
+
+\[
+\mathcal E_{P,Q}^{(m,k)}(A_S)=\{0\}.
+\]
+
+Hence
+
+\[
+\boxed{
+\text{valid}
+\iff
+\ker(B^{\mathsf T})=\{0\}
+}
+\]
+
+or equivalently,
+
+\[
+\boxed{
+\operatorname{rank}_{\mathbb F_2}B=mk.
+}
+\]
+
+Thus full cut rank is necessary and sufficient for even \(m\).
 
 ---
 
-# Running
+## Odd \(m\): \(XZ/ZX\) encoder class
 
-```bash
-python gsecc.py
-```
+Every exceptional vector must satisfy
 
-The script automatically
+\[
+x=Fc,
+\]
 
-- certifies graph states,
-- constructs decoder unitaries,
-- verifies numerical correctness,
-- generates PDF and PNG figures.
+together with
+
+\[
+(A_S+I_{mk})Fc=0
+\]
+
+and
+
+\[
+\mathbf 1_k^{\mathsf T}c=0.
+\]
+
+Therefore
+
+\[
+\boxed{
+\ker(B^{\mathsf T})
+\subseteq
+\left\{
+Fc:
+(A_S+I_{mk})Fc=0,\;
+\mathbf 1_k^{\mathsf T}c=0
+\right\}.
+}
+\]
+
+A necessary rank condition is
+
+\[
+\boxed{
+\operatorname{rank}_{\mathbb F_2}B
+\ge
+mk-k+1.
+}
+\]
+
+This rank bound is necessary but **not sufficient**. The complete kernel must satisfy the exceptional-space condition.
 
 ---
 
-# Included Examples
+## Odd \(m\): \(YZ/ZY\) encoder class
 
-The repository includes examples for
+Every exceptional vector must satisfy
 
-- Complete graphs
-- Cycle graphs
-- Linear cluster graphs
-- Cluster grids
-- Bell-pair matching graphs
-- GHZ (star) graphs
-- Erdős–Rényi random graphs
+\[
+x=Fc
+\]
 
+and
+
+\[
+A_SFc=0.
+\]
+
+Thus
+
+\[
+\boxed{
+\ker(B^{\mathsf T})
+\subseteq
+\left\{
+Fc:A_SFc=0
+\right\}.
+}
+\]
+
+A necessary rank condition is
+
+\[
+\boxed{
+\operatorname{rank}_{\mathbb F_2}B
+\ge
+(m-1)k.
+}
+\]
+
+Again, the rank inequality alone is not sufficient.
+
+This branch permits the maximal allowed nullity
+
+\[
+\dim\ker(B^{\mathsf T})=k,
+\]
+
+and therefore can attain
+
+\[
+\operatorname{rank}_{\mathbb F_2}B=(m-1)k.
+\]
+
+---
+
+## Odd \(m\): \(XY/YX\) encoder class
+
+The exceptional subspace is trivial,
+
+\[
+\mathcal E_{P,Q}^{(m,k)}(A_S)=\{0\}.
+\]
+
+Hence
+
+\[
+\boxed{
+\text{valid}
+\iff
+\operatorname{rank}_{\mathbb F_2}B=mk.
+}
+\]
+
+Full cut rank is again necessary and sufficient.
+
+---
+
+# 6. Summary of Exact Resource Classes
+
+| \(m\) | Encoder class | Exact condition | Necessary rank consequence |
+|---|---|---|---|
+| even | any \(P\neq Q\) | \(\ker B^{\mathsf T}=\{0\}\) | \(\operatorname{rank}B=mk\) |
+| odd | \(XZ/ZX\) | \(\ker B^{\mathsf T}\subseteq\mathcal E_Y(A_S)\) | \(\operatorname{rank}B\ge mk-k+1\) |
+| odd | \(YZ/ZY\) | \(\ker B^{\mathsf T}\subseteq\mathcal E_X(A_S)\) | \(\operatorname{rank}B\ge(m-1)k\) |
+| odd | \(XY/YX\) | \(\ker B^{\mathsf T}=\{0\}\) | \(\operatorname{rank}B=mk\) |
+
+The rank bounds in the two exceptional odd-\(m\) branches are only preliminary filters.
+
+The final decision always uses the complete cut kernel.
+
+---
+
+# 7. Exact Fixed-Realization Test
+
+For a prescribed realization
+
+\[
+\mathfrak R=
+(S,\mathcal N,\{\mathsf S_j\}_{j=1}^k),
+\]
+
+the function
+
+```python
+verify_gsecc_realization()
