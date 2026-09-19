@@ -2,17 +2,17 @@
 
 ## Overview
 
-This repository implements an exact certification framework for determining when a graph state can serve as a resource for multiparty encrypted quantum cloning under a fixed sector-wise two-Pauli encoder.
+This repository implements an exact certification framework for determining whether a graph state can serve as a resource for multiparty encrypted quantum cloning under a fixed sector-wise two-Pauli encoder.
 
-The central point is that **full signal-noise cut rank is sufficient, but not necessary in general**.
+The main structural point is that **full signal-noise cut rank is sufficient, but is not necessary in general**.
 
-For even numbers of encrypted outputs, full cut rank remains necessary and sufficient. For odd numbers of outputs, certain rank-deficient graph states can still support exact recovery when the complete cut kernel is compatible with the chosen encoder.
+For even $m$, full cut rank is necessary and sufficient. For odd $m$, certain rank-deficient graph states can still support exact recovery when the complete cut kernel is compatible with the chosen encoder.
 
-The implementation therefore goes beyond a rank-only test and checks the exact graph-state condition
+The implementation therefore goes beyond a rank-only test and evaluates the exact graph-state condition
 
-$\ker\!\left(B_{S\mathcal N}^{\mathsf T}\right)\subseteq\mathcal E_{P,Q}^{(m,k)}(A_S)$,
+$\ker(B_{S\mathcal N}^{\mathsf T})\subseteq\mathcal E_{P,Q}^{(m,k)}(A_S)$,
 
-where:
+where
 
 - $S$ is the signal subsystem,
 - $\mathcal N$ is the common noise/key subsystem,
@@ -29,102 +29,127 @@ The code performs an exhaustive graph-level search over balanced signal-noise cu
 
 Consider a graph state on $2mk$ qubits.
 
-The vertices are partitioned into two equally sized subsystems,
+The vertices are divided into two equally sized subsystems,
 
 $V=S\cup\mathcal N,\qquad |S|=|\mathcal N|=mk.$
 
-Here:
+Here
 
 - $m$ is the number of encrypted recovery pathways,
 - $k$ is the number of logical qubits,
-- $\nu=mk$ is the number of signal qubits and also the number of key/noise qubits.
+- $\nu=mk$ is the number of signal qubits and also the number of noise/key qubits.
 
 The signal subsystem is further decomposed into $k$ logical sectors,
 
 $S=\mathsf S_1\cup\cdots\cup\mathsf S_k,\qquad |\mathsf S_j|=m.$
 
-Each logical sector contains the $m$ signal qubits associated with one logical input qubit.
+The sector $\mathsf S_j$ contains the $m$ signal qubits associated with logical input qubit $A_j$.
 
-For a chosen balanced cut, write the graph adjacency matrix as
+For a chosen balanced cut, the graph adjacency matrix is written as
 
-$\Gamma=
-\begin{pmatrix}
-A_S & B_{S\mathcal N}\\
-B_{S\mathcal N}^{\mathsf T} & A_{\mathcal N}
-\end{pmatrix}.$
+$\Gamma=\begin{pmatrix}A_S&B_{S\mathcal N}\\B_{S\mathcal N}^{\mathsf T}&A_{\mathcal N}\end{pmatrix}.$
 
-All ranks, kernels, and linear-algebra operations used in the certification algorithm are evaluated over $\mathbb F_2$.
+All ranks, kernels, and linear-algebra calculations used by GSECC are performed over $\mathbb F_2$.
 
 ---
 
-# 2. Why Cut Rank Alone Is Not Enough
+# 2. Cut Rank and Signal-Noise Entanglement
 
-For a graph state, define
+For a fixed signal-noise cut, define
 
 $B\equiv B_{S\mathcal N}.$
 
-The signal-noise entanglement is determined by the binary cut rank,
+The signal-noise entanglement of a graph state is determined by the binary cut rank
 
 $r=\text{rank}_{\mathbb F_2}B.$
 
+For graph states,
+
+$S(\rho_S)=r.$
+
 In particular,
 
-$S(\rho_S)=r,$
-
-and
-
-$r=mk$
+$\text{rank}_{\mathbb F_2}B=mk$
 
 is equivalent to
 
 $\rho_S=\frac{I_S}{2^{mk}}.$
 
-Therefore every full-rank balanced cut gives a valid encrypted-cloning resource.
+Therefore every full-rank balanced cut provides a valid maximally entangled resource.
 
-However, the exact criterion is more general.
+However, full rank is not the complete criterion.
 
-The reduced state of the signal subsystem has the graph-state stabilizer expansion
+---
 
-$\rho_S=
-\frac{1}{2^{mk}}
-\sum_{x\in\ker(B^{\mathsf T})}
-K_S(x),$
+# 3. Why Rank Alone Is Not Enough
+
+For a graph state, the reduced signal state can be written as
+
+$\rho_S=\frac{1}{2^{mk}}\sum_{x\in\ker(B^{\mathsf T})}K_S(x),$
 
 where
 
-$K_S(x)\doteq X^x Z^{A_Sx}.$
+$K_S(x)\doteq X^xZ^{A_Sx}.$
 
-Thus the complete kernel $\ker(B^{\mathsf T})$ specifies the signal-side correlations responsible for any departure from maximal mixing.
+Thus the complete kernel
 
-For odd $m$, some of these correlations can be harmless for particular encoders. Consequently,
+$\ker(B^{\mathsf T})$
+
+specifies exactly which signal-side stabilizer correlations survive after tracing out $\mathcal N$.
+
+If
+
+$\ker(B^{\mathsf T})=\{0\},$
+
+then
+
+$\rho_S=\frac{I_S}{2^{mk}}.$
+
+If instead
+
+$\ker(B^{\mathsf T})\neq\{0\},$
+
+the resource is rank deficient across the signal-noise cut.
+
+For odd $m$, some nonzero kernel directions can nevertheless be compatible with exact encrypted cloning for particular encoder classes.
+
+Consequently,
 
 $\text{rank}_{\mathbb F_2}B<mk$
 
 does **not** automatically imply failure.
 
-The exact resource property depends on the resource-encoder pair.
+The exact operational property depends on both the graph state and the encoder.
 
 ---
 
-# 3. Exact Graph-State Criterion
+# 4. Exact Graph-State Criterion
 
-For a fixed balanced cut, fixed logical-sector decomposition, and fixed two-Pauli encoder $U_{P,Q}^{(m,k)}$, the graph state is valid exactly when
+For a fixed balanced cut, fixed sector decomposition, and fixed two-Pauli encoder $U_{P,Q}^{(m,k)}$, the graph state is valid exactly when
 
-$\boxed{
-\ker(B_{S\mathcal N}^{\mathsf T})
-\subseteq
-\mathcal E_{P,Q}^{(m,k)}(A_S)
-}.$
+$\ker(B_{S\mathcal N}^{\mathsf T})\subseteq\mathcal E_{P,Q}^{(m,k)}(A_S).$
 
-Because both the cut kernel and the exceptional space are linear subspaces over $\mathbb F_2$, it is sufficient to test a basis of $\ker(B^{\mathsf T})$.
+Here $\mathcal E_{P,Q}^{(m,k)}(A_S)$ is the exceptional subspace selected by the encoder.
+
+Because both
+
+$\ker(B^{\mathsf T})$
+
+and
+
+$\mathcal E_{P,Q}^{(m,k)}(A_S)$
+
+are linear subspaces over $\mathbb F_2$, it is sufficient to test a basis of the cut kernel.
+
+This gives an exact finite binary-linear-algebra certification test for every prescribed realization.
 
 ---
 
-# 4. Sector-Indicator Map
+# 5. Sector-Indicator Map
 
 For odd $m$, every nonzero exceptional kernel vector must be constant within each logical sector.
 
-Define
+Define the sector-indicator map
 
 $F:\mathbb F_2^k\rightarrow\mathbb F_2^{mk}$
 
@@ -136,154 +161,132 @@ where
 
 $c=(c_1,\ldots,c_k)\in\mathbb F_2^k.$
 
-Thus an exceptional vector must have the form
+Thus every exceptional vector must have the form
 
 $x=Fc.$
 
-Computationally, every kernel basis vector is first checked for constancy within each logical sector.
+Equivalently, within each logical sector, all $m$ entries of $x$ must agree.
+
+The exact implementation therefore first checks whether every kernel basis vector is sector constant.
 
 ---
 
-# 5. Parity- and Encoder-Dependent Classification
+# 6. Parity- and Encoder-Dependent Classification
 
-The exact criterion separates into four branches.
+The exact criterion separates into four cases.
 
-## Even $m$
+## 6.1 Even $m$
 
-For every two-Pauli encoder,
+For even $m$, the exceptional subspace is trivial for every two-Pauli encoder,
 
 $\mathcal E_{P,Q}^{(m,k)}(A_S)=\{0\}.$
-
-Hence
-
-$\boxed{
-\text{valid}
-\iff
-\ker(B^{\mathsf T})=\{0\}
-}$
-
-or equivalently,
-
-$\boxed{
-\operatorname{rank}_{\mathbb F_2}B=mk.
-}$
-
-Thus full cut rank is necessary and sufficient for even $m$.
-
----
-
-## Odd $m$: $XZ/ZX$ encoder class
-
-Every exceptional vector must satisfy
-
-$x=Fc,$
-
-together with
-
-$(A_S+I_{mk})Fc=0$
-
-and
-
-$\mathbf 1_k^{\mathsf T}c=0.$
 
 Therefore
 
-$\boxed{
-\ker(B^{\mathsf T})
-\subseteq
-\left\{
-Fc:
-(A_S+I_{mk})Fc=0,\;
-\mathbf 1_k^{\mathsf T}c=0
-\right\}.
-}$
+$\text{valid}\iff\ker(B^{\mathsf T})=\{0\},$
 
-A necessary rank condition is
+which is equivalent to
 
-$\boxed{
-\operatorname{rank}_{\mathbb F_2}B
-\ge
-mk-k+1.
-}$
+$\text{rank}_{\mathbb F_2}B=mk.$
 
-This rank bound is necessary but **not sufficient**. The complete kernel must satisfy the exceptional-space condition.
+Hence full signal-noise cut rank is both necessary and sufficient whenever $m$ is even.
 
 ---
 
-## Odd $m$: $YZ/ZY$ encoder class
+## 6.2 Odd $m$: $XZ/ZX$ Encoder Class
 
-Every exceptional vector must satisfy
+For the $XZ/ZX$ encoder class, every exceptional vector must have the form
 
 $x=Fc$
 
-and
+and satisfy
+
+$(A_S+I_{mk})Fc=0$
+
+together with
+
+$\mathbf 1_k^{\mathsf T}c=0.$
+
+Thus the exact condition is
+
+$\ker(B^{\mathsf T})\subseteq\{Fc:(A_S+I_{mk})Fc=0,\ \mathbf 1_k^{\mathsf T}c=0\}.$
+
+A necessary rank consequence is
+
+$\text{rank}_{\mathbb F_2}B\ge mk-k+1.$
+
+This rank inequality is **necessary but not sufficient**.
+
+A graph can satisfy the rank bound and still fail because the orientation of its complete cut kernel is incompatible with the exceptional subspace.
+
+---
+
+## 6.3 Odd $m$: $YZ/ZY$ Encoder Class
+
+For the $YZ/ZY$ encoder class, every exceptional vector must have the form
+
+$x=Fc$
+
+and satisfy
 
 $A_SFc=0.$
 
-Thus
+Thus the exact condition is
 
-$\boxed{
-\ker(B^{\mathsf T})
-\subseteq
-\left\{
-Fc:A_SFc=0
-\right\}.
-}$
+$\ker(B^{\mathsf T})\subseteq\{Fc:A_SFc=0\}.$
 
-A necessary rank condition is
+A necessary rank consequence is
 
-$\boxed{
-\operatorname{rank}_{\mathbb F_2}B
-\ge
-(m-1)k.
-}$
+$\text{rank}_{\mathbb F_2}B\ge(m-1)k.$
 
 Again, the rank inequality alone is not sufficient.
 
-This branch permits the maximal allowed nullity
+The $YZ/ZY$ class is special because it can permit the maximal exceptional nullity
 
-$\dim\ker(B^{\mathsf T})=k,$
+$\dim\ker(B^{\mathsf T})=k.$
 
-and can therefore attain
+When this occurs,
 
-$\operatorname{rank}_{\mathbb F_2}B=(m-1)k.$
+$\text{rank}_{\mathbb F_2}B=(m-1)k.$
+
+Thus this branch can attain the minimum signal-noise entanglement compatible with exact all-output recovery.
 
 ---
 
-## Odd $m$: $XY/YX$ encoder class
+## 6.4 Odd $m$: $XY/YX$ Encoder Class
 
-The exceptional subspace is trivial,
+For the $XY/YX$ encoder class, the exceptional subspace is again trivial,
 
 $\mathcal E_{P,Q}^{(m,k)}(A_S)=\{0\}.$
 
-Hence
+Therefore
 
-$\boxed{
-\text{valid}
-\iff
-\operatorname{rank}_{\mathbb F_2}B=mk.
-}$
+$\text{valid}\iff\ker(B^{\mathsf T})=\{0\},$
 
-Full cut rank is again necessary and sufficient.
+or equivalently,
+
+$\text{rank}_{\mathbb F_2}B=mk.$
+
+Thus full cut rank remains necessary and sufficient for this encoder class.
 
 ---
 
-# 6. Summary of Exact Resource Classes
+# 7. Summary of Exact Resource Classes
 
-| $m$ | Encoder class | Exact condition | Necessary rank consequence |
+| $m$ | Encoder class | Exact validity condition | Necessary rank consequence |
 |---|---|---|---|
-| even | any $P\neq Q$ | $\ker B^{\mathsf T}=\{0\}$ | $\operatorname{rank}B=mk$ |
-| odd | $XZ/ZX$ | $\ker B^{\mathsf T}\subseteq\mathcal E_Y(A_S)$ | $\operatorname{rank}B\ge mk-k+1$ |
-| odd | $YZ/ZY$ | $\ker B^{\mathsf T}\subseteq\mathcal E_X(A_S)$ | $\operatorname{rank}B\ge(m-1)k$ |
-| odd | $XY/YX$ | $\ker B^{\mathsf T}=\{0\}$ | $\operatorname{rank}B=mk$ |
+| even | any $P\neq Q$ | $\ker(B^{\mathsf T})=\{0\}$ | $\text{rank}_{\mathbb F_2}B=mk$ |
+| odd | $XZ/ZX$ | $\ker(B^{\mathsf T})\subseteq\mathcal E_Y(A_S)$ | $\text{rank}_{\mathbb F_2}B\ge mk-k+1$ |
+| odd | $YZ/ZY$ | $\ker(B^{\mathsf T})\subseteq\mathcal E_X(A_S)$ | $\text{rank}_{\mathbb F_2}B\ge(m-1)k$ |
+| odd | $XY/YX$ | $\ker(B^{\mathsf T})=\{0\}$ | $\text{rank}_{\mathbb F_2}B=mk$ |
 
-The rank bounds in the two exceptional odd-$m$ branches are only preliminary filters.
+For the two exceptional odd-$m$ branches, the rank bounds are only preliminary filters.
 
-The final certification decision always uses the complete cut kernel.
+The final certification decision is determined by the complete cut-kernel inclusion.
 
 ---
 
-# 7. Exact Fixed-Realization Test
+# 8. Exact Fixed-Realization Test
 
 For a prescribed realization
 
