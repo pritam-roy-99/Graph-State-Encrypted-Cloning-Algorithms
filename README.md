@@ -65,7 +65,7 @@ $B\equiv B_{S\mathcal N}.$
 
 The signal-noise entanglement is determined by the binary cut rank,
 
-$r=\operatorname{rank}_{\mathbb F_2}B.$
+$r=\text{rank}_{\mathbb F_2}B.$
 
 In particular,
 
